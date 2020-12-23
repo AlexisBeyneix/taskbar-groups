@@ -1,5 +1,6 @@
 ﻿using client.Classes;
 using client.User_controls;
+using IWshRuntimeLibrary;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -8,6 +9,7 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -19,26 +21,42 @@ namespace client.Forms
         public List<ucProgramShortcut> ucShortcutList { get; set; }
         public frmClient Client { get; set; }
         public bool IsNew { get; set; }
+
+        private String[] imageExt = new String[] { ".png", ".jpg", ".jpe", ".jfif", ".jpeg", };
+        private String[] extensionExt = new String[] { ".exe", ".lnk" };
+        private String[] specialImageExt = new String[] { ".ico", ".exe", ".lnk" };
+
+        private String[] newExt;
         public frmGroup(frmClient client, Category category)
         {
             InitializeComponent();
             Category = category;
             Client = client;
+            cmdDelete.Visible = false;
+            cmdSave.Left += 70;
+            cmdExit.Left += 70;
             IsNew = false;
             ucShortcutList = new List<ucProgramShortcut>();
 
-            txtGroupName.Text = Category.Name;
+            this.MaximumSize = new Size(605, Screen.PrimaryScreen.WorkingArea.Height);
+            txtGroupName.Text = Regex.Replace(Category.Name, @"(_)+", " ");
             cmdAddGroupIcon.BackgroundImage = Category.LoadIconImage();
             lblNum.Text = Category.Width.ToString();
+            this.MaximumSize = new Size(605, Screen.PrimaryScreen.WorkingArea.Height);
             LoadShortcuts();
         }
         public frmGroup(frmClient client)
         {
             InitializeComponent();
+            newExt = imageExt.Concat(specialImageExt).ToArray();
             Category = new Category { ShortcutList = new List<ProgramShortcut>() };
             Client = client;
+            cmdDelete.Visible = false;
+            cmdSave.Left += 70;
+            cmdExit.Left += 70;
             IsNew = true;
             ucShortcutList = new List<ucProgramShortcut>();
+            this.MaximumSize = new Size(605, Screen.PrimaryScreen.WorkingArea.Height);
             LoadShortcuts();
         }
 
@@ -59,7 +77,11 @@ namespace client.Forms
                 ucPsc.BringToFront();
                 position++;
 
-                if (pnlShortcuts.Height < 350)
+
+                if (pnlShortcuts.Height < this.Height - 470)
+
+                if (pnlShortcuts.Height < this.Height-470)
+
                 {
                     y += 50;
                     pnlShortcuts.Height += 50;
@@ -68,7 +90,7 @@ namespace client.Forms
                     pnlShortcuts.ScrollControlIntoView(ucPsc);
             }
 
-            if (pnlShortcuts.Height >= 350)
+            if (pnlShortcuts.Height >= this.Height - 470)
             {
                 if (!pnlShortcuts.AutoScroll)
                 {
@@ -77,14 +99,8 @@ namespace client.Forms
 
                 }
             }
-
             pnlAdd.Top = pnlShortcuts.Bottom;
-            //if (pnlAdd.Bottom > pnlEnd.Top)
-            //{
-            //    this.Height += 50;
-            //    pnlEnd.Top += 50;
-            //}
-            //this.Height = pnlAdd.Bottom + 75;
+
         }
 
         public void Swap<T>(IList<T> list, int indexA, int indexB)
@@ -122,7 +138,6 @@ namespace client.Forms
             }
             else
             {
-
                 try
                 {
                     if (!IsNew)
@@ -130,19 +145,21 @@ namespace client.Forms
                         //
                         // delete old config
                         //
-                        string configPath = Directory.GetCurrentDirectory() + @"\config\" + Category.Name;
-                        string shortcutPath = Directory.GetCurrentDirectory() + @"\Shortcuts\" + Category.Name + @".lnk";
+                        string configPath = @MainPath.path + @"\config\" + Category.Name;
+                        //string shortcutPath = configPath + @"\Shortcuts\" + Category.Name + @".lnk";
                         var dir = new DirectoryInfo(configPath);
 
                         dir.Delete(true); // delete config directory
-                        File.Delete(shortcutPath); // delete .lnk
+                        //System.IO.File.Delete(shortcutPath); // delete .lnk
                     }
                     //
                     // creating new config
                     //
                     int width = int.Parse(lblNum.Text);
                     Category category = new Category(txtGroupName.Text, Category.ShortcutList, width); // instantiate category
-                    System.IO.Directory.CreateDirectory(@"\Shortcuts");
+
+                    // Normalize string so it can be used in path; remove spaces
+                    category.Name = Regex.Replace(category.Name, @"\s+", "_");
 
                     category.CreateConfig(cmdAddGroupIcon.BackgroundImage); // create group config files
                     Client.LoadCategory(Path.GetFullPath(@"config\" + category.Name)); // load visuals
@@ -162,13 +179,11 @@ namespace client.Forms
         {
             try
             {
-                string configPath = Directory.GetCurrentDirectory() + @"\config\" + Category.Name;
-                string shortcutPath = Directory.GetCurrentDirectory() + @"\Shortcuts\" + Category.Name + @".lnk";
+                string configPath = @MainPath.path + @"\config\" + Category.Name;
 
                 var dir = new DirectoryInfo(configPath);
 
                 dir.Delete(true); // delete config directory
-                File.Delete(shortcutPath); // delete .lnk
                 this.Hide();
                 this.Dispose();
                 Client.Reload(); //flush and reload category panels
@@ -186,14 +201,12 @@ namespace client.Forms
 
             OpenFileDialog openFileDialog = new OpenFileDialog  // ask user to select img as group icon
             {
-                //InitialDirectory = @"C:\",
                 InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyPictures),
-
                 Title = "Select Group Icon",
                 CheckFileExists = true,
                 CheckPathExists = true,
                 DefaultExt = "img",
-                Filter = "Image files (*.jpg, *.jpeg, *.jpe, *.jfif, *.png) | *.jpg; *.jpeg; *.jpe; *.jfif; *.png",
+                Filter = "Image files and exec (*.jpg, *.jpeg, *.jpe, *.jfif, *.png, *.exe, *.ico) | *.jpg; *.jpeg; *.jpe; *.jfif; *.png; *.ico; *.exe",
                 FilterIndex = 2,
                 RestoreDirectory = true,
                 ReadOnlyChecked = true,
@@ -201,7 +214,24 @@ namespace client.Forms
 
             if (openFileDialog.ShowDialog() == DialogResult.OK)
             {
-                cmdAddGroupIcon.BackgroundImage = Image.FromFile(openFileDialog.FileName);
+
+                String imageExtension = Path.GetExtension(openFileDialog.FileName).ToLower();
+
+                if (specialImageExt.Contains(imageExtension))
+                {
+                    if (imageExtension == ".lnk")
+                    {
+                        cmdAddGroupIcon.BackgroundImage = handleLnkExt(openFileDialog.FileName);
+                    }
+                    else
+                    {
+                        cmdAddGroupIcon.BackgroundImage = Icon.ExtractAssociatedIcon(openFileDialog.FileName).ToBitmap();
+                    }
+                }
+                else
+                {
+                   cmdAddGroupIcon.BackgroundImage = Image.FromFile(openFileDialog.FileName);
+                }
                 lblAddGroupIcon.Text = "Change group icon";
             }
         }
@@ -238,6 +268,7 @@ namespace client.Forms
             }
         }
 
+
         private void pnlGroupIcon_MouseEnter(object sender, EventArgs e)
         {
             pnlGroupIcon.BackColor = Color.FromArgb(23, 23, 23);
@@ -248,6 +279,7 @@ namespace client.Forms
             pnlGroupIcon.BackColor = Color.FromArgb(31, 31, 31);
 
         }
+
 
         private void pnlAddShortcut_Click(object sender, EventArgs e)
         {
@@ -267,7 +299,11 @@ namespace client.Forms
                 CheckFileExists = true,
                 CheckPathExists = true,
                 DefaultExt = "exe",
-                Filter = "Exe (.exe)|*.exe",
+
+                Filter = "Exe or Shortcut (.exe, .lnk)|*.exe;*.lnk",
+
+                //Filter = "Exe (.exe)|*.exe",
+
                 FilterIndex = 2,
                 RestoreDirectory = true,
                 //ShowReadOnly = true,
@@ -286,11 +322,134 @@ namespace client.Forms
 
         }
 
+        
+        // Handle dropped programs into the add program/shortcut field
+        private void pnlDragDropExt(object sender, DragEventArgs e)
+        {
+            var files = (String[])e.Data.GetData(DataFormats.FileDrop);
+
+            // Loops through each file to make sure they exist and to add them directly to the shortcut list
+            foreach (var file in files)
+            {
+                if (extensionExt.Contains(Path.GetExtension(file)) && System.IO.File.Exists(file))
+                {
+                    ProgramShortcut programShortcut = new ProgramShortcut(file); //Create new shortcut obj
+                    Category.ShortcutList.Add(programShortcut); // Add to panel shortcut list
+
+                    /*
+                    pnlShortcuts.Controls.Clear();
+                    LoadShortcuts();
+                    pnlShortcuts.ScrollControlIntoView(pnlShortcuts.Controls[0]); // scroll to the latest created control
+
+                    Note: This code was moved out of the loop to improve performance as to not keep reloading the client until the extension adding is done
+                    As a result, the little slide animation as the icons are being added is now gone
+                    Code may be moved back in depending on future scenario/use cases; alternative should be found for this one for better efficiency
+                     */
+                }
+            }
+
+            pnlShortcuts.Controls.Clear();
+            LoadShortcuts();
+            pnlShortcuts.ScrollControlIntoView(pnlShortcuts.Controls[0]); // scroll to the latest created control
+        }
+
+        // Handle drag and dropped images
+        private void pnlDragDropImg(object sender, DragEventArgs e)
+        {
+            var files = (String[])e.Data.GetData(DataFormats.FileDrop);
+
+            String imageExtension = Path.GetExtension(files[0]).ToLower();
+
+            if (files.Length == 1 && newExt.Contains(imageExtension) && System.IO.File.Exists(files[0]))
+            {
+                // Checks if the files being added/dropped are an .exe or .lnk in which tye icons need to be extracted/processed
+                if (specialImageExt.Contains(imageExtension))
+                {
+                    if (imageExtension == ".lnk")
+                    {
+                        cmdAddGroupIcon.BackgroundImage = handleLnkExt(files[0]);
+                    }
+                    else
+                    {
+                        cmdAddGroupIcon.BackgroundImage = Icon.ExtractAssociatedIcon(files[0]).ToBitmap();
+                    }
+                }
+                else
+                {
+                    cmdAddGroupIcon.BackgroundImage = Image.FromFile(files[0]);
+                }
+                lblAddGroupIcon.Text = "Change group icon";
+            }
+        }
+
+        // Handle returning images of icon files (.lnk)
+        public static Image handleLnkExt(String file)
+        {
+                IWshShortcut lnkIcon = ((IWshShortcut)new WshShell().CreateShortcut(file));
+
+            // Check if iconLocation exists to get an .ico from; if not then take the image from the .exe it is referring to
+            // Checks for link iconLocations as those are used by some applications
+            if (lnkIcon.IconLocation != null && !lnkIcon.IconLocation.Contains("http"))
+                {
+                    return Icon.ExtractAssociatedIcon(lnkIcon.IconLocation.Substring(0, lnkIcon.IconLocation.Length - 2)).ToBitmap();
+                }
+                else
+                {
+                    return Icon.ExtractAssociatedIcon(lnkIcon.TargetPath).ToBitmap();
+                }
+            
+        }
+
+        // Below two functions highlights the background as you would if you hovered over it with a mosue
+        // Use checkExtension to allow file dropping after a series of checks
+        // Only highlights if the files being dropped are valid in extension wise
+        private void pnlDragDropEnterExt(object sender, DragEventArgs e)
+        {
+            if(checkExtensions(e, extensionExt))
+            {
+                pnlAddShortcut.BackColor = Color.FromArgb(23, 23, 23);
+            }
+        }
+
+        private void pnlDragDropEnterImg(object sender, DragEventArgs e)
+        {
+            if(checkExtensions(e, imageExt.Concat(specialImageExt).ToArray()))
+            {
+                pnlGroupIcon.BackColor = Color.FromArgb(23, 23, 23);
+            }
+        }
+
+        // Series of checks to make sure it can be dropped
+        private Boolean checkExtensions(DragEventArgs e, String[] exts)
+        {
+            // Make sure the file can be dragged dropped
+            if (!e.Data.GetDataPresent(DataFormats.FileDrop)) return false;
+
+            // Get the list of files of the files dropped
+            String[] files = (String[])e.Data.GetData(DataFormats.FileDrop);
+
+            // Loop through each file and make sure the extension is allowed as defined by a series of arrays at the top of the script
+            foreach (var file in files)
+            {
+                String ext = Path.GetExtension(file);
+
+                if (exts.Contains(ext.ToLower()))
+                {
+                    // Gives the effect that it can be dropped and unlocks the ability to drop files in
+                    e.Effect = DragDropEffects.Copy;
+                    return true;
+                } else
+                {
+                    return false;
+                }
+            }
+            return false;
+        }
+
+        // Below two functions highlights the background as you would if you hovered over it with a mosue
         private void pnlAddShortcut_MouseEnter(object sender, EventArgs e)
         {
             pnlAddShortcut.BackColor = Color.FromArgb(23, 23, 23);
-
-
         }
 
         private void pnlAddShortcut_MouseLeave(object sender, EventArgs e)
@@ -298,6 +457,7 @@ namespace client.Forms
             pnlAddShortcut.BackColor = Color.FromArgb(31, 31, 31);
 
         }
+
 
         private void txtGroupName_MouseClick(object sender, MouseEventArgs e)
         {

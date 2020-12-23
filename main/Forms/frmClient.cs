@@ -18,6 +18,7 @@ namespace client.Forms
         public frmClient()
         {
             InitializeComponent();
+            this.MaximumSize = new Size(Screen.PrimaryScreen.WorkingArea.Width, Screen.PrimaryScreen.WorkingArea.Height);
             Reload();
         }
         public void Reload()
@@ -26,7 +27,7 @@ namespace client.Forms
             pnlExistingGroups.Controls.Clear();
             pnlExistingGroups.Height = 0;
 
-            string configPath = Directory.GetCurrentDirectory() + @"\config";
+            string configPath = @MainPath.path + @"\config";
             string[] subDirectories = Directory.GetDirectories(configPath);
             foreach (string dir in subDirectories)
             {

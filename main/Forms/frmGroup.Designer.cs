@@ -176,6 +176,7 @@
             // 
             // pnlGroupIcon
             // 
+            this.pnlGroupIcon.AllowDrop = true;
             this.pnlGroupIcon.Controls.Add(this.cmdAddGroupIcon);
             this.pnlGroupIcon.Controls.Add(this.lblAddGroupIcon);
             this.pnlGroupIcon.Controls.Add(this.lblAddGroupIconDesc);
@@ -184,6 +185,9 @@
             this.pnlGroupIcon.Size = new System.Drawing.Size(495, 86);
             this.pnlGroupIcon.TabIndex = 33;
             this.pnlGroupIcon.Click += new System.EventHandler(this.cmdAddGroupIcon_Click);
+            this.pnlGroupIcon.DragDrop += new System.Windows.Forms.DragEventHandler(this.pnlDragDropImg);
+            this.pnlGroupIcon.DragEnter += new System.Windows.Forms.DragEventHandler(this.pnlDragDropEnterImg);
+            this.pnlGroupIcon.DragLeave += new System.EventHandler(this.pnlGroupIcon_MouseLeave);
             this.pnlGroupIcon.MouseEnter += new System.EventHandler(this.pnlGroupIcon_MouseEnter);
             this.pnlGroupIcon.MouseLeave += new System.EventHandler(this.pnlGroupIcon_MouseLeave);
             // 
@@ -283,6 +287,7 @@
             // 
             // pnlAddShortcut
             // 
+            this.pnlAddShortcut.AllowDrop = true;
             this.pnlAddShortcut.Controls.Add(this.cmdAddShortcut);
             this.pnlAddShortcut.Controls.Add(this.lblErrorShortcut);
             this.pnlAddShortcut.Controls.Add(this.lblAddShortcut);
@@ -291,6 +296,9 @@
             this.pnlAddShortcut.Size = new System.Drawing.Size(415, 77);
             this.pnlAddShortcut.TabIndex = 45;
             this.pnlAddShortcut.Click += new System.EventHandler(this.pnlAddShortcut_Click);
+            this.pnlAddShortcut.DragDrop += new System.Windows.Forms.DragEventHandler(this.pnlDragDropExt);
+            this.pnlAddShortcut.DragEnter += new System.Windows.Forms.DragEventHandler(this.pnlDragDropEnterExt);
+            this.pnlAddShortcut.DragLeave += new System.EventHandler(this.pnlAddShortcut_MouseLeave);
             this.pnlAddShortcut.MouseEnter += new System.EventHandler(this.pnlAddShortcut_MouseEnter);
             this.pnlAddShortcut.MouseLeave += new System.EventHandler(this.pnlAddShortcut_MouseLeave);
             // 
@@ -361,10 +369,11 @@
             // 
             // pnlEnd
             // 
+            this.pnlEnd.Anchor = System.Windows.Forms.AnchorStyles.Bottom;
             this.pnlEnd.Controls.Add(this.cmdDelete);
             this.pnlEnd.Controls.Add(this.cmdSave);
             this.pnlEnd.Controls.Add(this.cmdExit);
-            this.pnlEnd.Location = new System.Drawing.Point(49, 675);
+            this.pnlEnd.Location = new System.Drawing.Point(49, 678);
             this.pnlEnd.Name = "pnlEnd";
             this.pnlEnd.Size = new System.Drawing.Size(482, 104);
             this.pnlEnd.TabIndex = 47;
@@ -373,6 +382,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.AutoScroll = true;
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(31)))), ((int)(((byte)(31)))), ((int)(((byte)(31)))));
             this.ClientSize = new System.Drawing.Size(589, 781);
             this.Controls.Add(this.pnlEnd);
